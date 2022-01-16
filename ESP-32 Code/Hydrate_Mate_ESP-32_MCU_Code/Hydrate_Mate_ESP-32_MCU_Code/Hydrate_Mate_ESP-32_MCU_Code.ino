@@ -1,10 +1,15 @@
+
+
 #include <BluetoothSerial.h>
 
 #define trigPin 5
 #define powerPin 21
 #define echoPin 18
 
-int duration = 10;
+int duration;
+int readDuration;
+int readDurationAvg = 0;
+int avgDistance;
 BluetoothSerial SerialBT;
 byte BTData;
 
@@ -16,13 +21,12 @@ byte BTData;
 
 void setup()
 {
-  //pinMode(ledPIN, OUTPUT);
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
   pinMode(powerPin, OUTPUT);
   Serial.begin(115200);
- SerialBT.begin();
- Serial.println("Bluetooth Started! Ready to pair...");
+  SerialBT.begin();
+  Serial.println("Bluetooth Started! Ready to pair...");
   digitalWrite(powerPin, HIGH);
   delay(10000);
 }
@@ -31,7 +35,7 @@ int getSensorReading()
 {
 
   digitalWrite(trigPin, LOW);
-  delayMicroseconds(5);
+  delayMicroseconds(2);
 
   digitalWrite(trigPin, HIGH);
   delayMicroseconds(10);
@@ -45,7 +49,7 @@ int getSensorReading()
 void loop()
 
 {
-   if (Serial.available())
+ /*  if (Serial.available())
   {
     SerialBT.write(Serial.read());
   }
@@ -53,6 +57,17 @@ void loop()
   {
     Serial.write(SerialBT.read());
   }
+  */
+  readDurationAvg = 0;
+  for(int i = 0; i < 30; i++)
+  {
+    readDurationAvg += getSensorReading();
+    delay(10);
+  }
+  readDuration = readDurationAvg / 30;
+  avgDistance = 
+
+  if(readDuration) > 
   
    
 }
