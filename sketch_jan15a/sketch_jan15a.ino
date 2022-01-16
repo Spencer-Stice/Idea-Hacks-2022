@@ -4,15 +4,14 @@
 #error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
 #endif
 
-#define echoPin 18
-#define trigPin 5
+#define echoPin 14
+#define trigPin 12
 #define LED_Pin 2
-
-const int MEASURE_TIMES = 30;
+const int MEASURE_TIMES = 1;
 const float SOUND_SPEED = 34300; //cm/second
 const float CALIBRATION_VOLUME = 100; //volume, in mL, that is used for calibration
 float bottle_height = 20;
-float bottle_area = 35;
+int bottle_area = 35;
 
 BluetoothSerial SerialBT;
 
@@ -55,6 +54,7 @@ float measureTime() {
     sum += pulseIn(echoPin, HIGH);
   }
   return sum / MEASURE_TIMES;
+
 }
 
 float measureWater(float bottle_height, float bottle_area) {
@@ -107,18 +107,16 @@ void sendTimeSinceLastDrink()
 
 void calibrateHeight() {
   float average_time = measureTime();
-  Serial.println(average_time);
   bottle_height = SOUND_SPEED * average_time / 2000000;
-  
   return;
 }
 
 void calibrateArea() {
   float average_time = measureTime();
   float water_height = bottle_height - (SOUND_SPEED * average_time / 2000000);
-  Serial.println(water_height);
   //CALIBRATION_VOLUME (in mL) / height (in cm) = area (in cm^2)
   bottle_area = CALIBRATION_VOLUME / water_height;
+  SerialBT.write(bottle_area);
   
   return;
 }
@@ -129,7 +127,7 @@ void loop() {
   //return;
 
   calibrateArea();
-  delay(10);
+  delay(3000);
   /*
   tempTime = curTime;
   curTime = millis();
