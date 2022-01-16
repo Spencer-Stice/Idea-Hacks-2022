@@ -18,6 +18,8 @@ int startBit = 1;
 uint32_t prevTime;
 uint32_t curTime;
 uint32_t tempTime;
+uint32_t timeSinceLastDrink = 0;
+uint32_t lastDrankTime;
 
  /*Check if Bluetooth configurations are enabled in the SDK */
 #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
@@ -32,9 +34,7 @@ void setup()
   pinMode(powerPin, OUTPUT);
   Serial.begin(115200);
   SerialBT.begin();
-  Serial.println("Bluetooth Started! Ready to pair...");
-  digitalWrite(powerPin, HIGH);
-  delay(10000);
+  calibrate();
 }
 
 int measureWater(int bottle_height, int bottle_area) {
@@ -61,24 +61,37 @@ int measureWater(int bottle_height, int bottle_area) {
 
 void sendCurrentVolume()
 {
-  if(currentVolumeML != -1)
+  if(currentVolumeML != -1 && prevVolumeML == -1)
   {
+    SerialBT.write(0);
     SerialBT.write(currentVolumeML);
-  }
-  else
-  {
-    SerialBT.write(-1);
   }
 }
 
-void checkBottlesConsumed(int currentVolumeML)
+void checkBottlesConsumed()
 {
   if(currentVolumeML < 10 && prevVolumeML > 10)
   {
     bottlesConsumed++;
+    sendBottlesConsumed();
   }
 }
 
+void sendBottlesConsumed()
+{
+  SerialBT.write(1);
+  SerialBT.write(bottlesConsumed);
+}
+
+void sendTimeSinceLastDrink()
+{
+  SerialBT.write(2);
+  SerialBT.write(timeSinceLastDrink);
+  if(timeSinceLastDrink > 1000*60*60)
+  {
+    SerialBT.write(3);
+  }
+}
 
 void loop()
 
@@ -104,19 +117,22 @@ void loop()
   //1)Read sensor value every ~2 secs
   prevVolumeML = currentVolumeML;
   currentVolumeML = measureWater();
+
+  if(currentVolumeML < prevVolumeML)
+  {
+    lastDrankTime = millis();
+  }
+  timeSinceLastDrink = millis() - lastDrankTime;
+  sendTimeSinceLastDrink();
+
+  //Send time since last consumed water
+  sendTimeSinceLastDrink();
   
   //2)If cap is on, send value to app. If cap is off, tell the app that
-  sendCurrentVolume(currentVolumeML);
+  sendCurrentVolume();
   
   //3)If the water level gets low enough, count it as a bottle consumed
-  if(currentVolumeML < 10 && prevVolumeML > 10)
-  {
-    bottlesConsumed++;
-  }
-
-
-
-
-
-   
+  checkBottlesConsumed;
+  
+  delay(2000); 
 }
